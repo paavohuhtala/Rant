@@ -152,14 +152,14 @@ namespace Rant.Vocabulary
                             var references = parts.Where(p => p.Kind == "ref").Select(r =>
                             {
                                 // TODO?: Improve performance by changing 'entries' into a dictionary
-                                var referredEntry = entries.First(dictionaryEntry => dictionaryEntry.Terms.First().Value == r.Value);
+                                var referredEntry = entries.Where(dictionaryEntry => dictionaryEntry.Terms.First().Value == r.Value).ToList();
 
-                                if (referredEntry == null)
+                                if (referredEntry.Count == 0)
                                 {
                                     LoadError(path, token, $"Reference to a non-existant entry: {r.Value}");
                                 }
 
-                                return referredEntry;
+                                return referredEntry.First();
                             }).ToDictionary(e => e.Terms.First().Value, e => e);
 
                             // Loop over all subtypes and merge the parts with a StringBuilder.
