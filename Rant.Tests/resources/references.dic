@@ -1,0 +1,8 @@
+﻿#version 3
+#name test
+#subs singular plural
+
+>> berry/-ies
+
+^> rasp[berry]
+^> straw[berry]

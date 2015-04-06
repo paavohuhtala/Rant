@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using Rant.Engine;
 using Rant.Stringes;
@@ -126,6 +127,48 @@ namespace Rant.Vocabulary
                                     if (i > 0) return Diff.Mark(first, s);
                                     return first = s.Trim();
                                 }).ToArray(), scopedClassSet, nsfw);
+                            entries.Add(entry);
+                        }
+                        break;
+                    case DicTokenType.RefEntry:
+                        {
+                            if (nsfwFilter == NsfwFilter.Disallow && nsfw) continue;
+                            if (Util.IsNullOrWhiteSpace(name)) LoadError(path, token, "Missing dictionary name before entry list.");
+                            if (Util.IsNullOrWhiteSpace(token.Value))
+                            {
+                                LoadError(path, token, "Encountered empty dictionary entry.");
+                            }
+
+                            header = false;
+
+                            // After splitting, mark every other part as a reference.
+                            // TODO?: Make Kind an enum instead of a string
+                            var parts = token.Value.Split('[', ']')
+                                .Select((s, i) => new {Kind = i % 2 == 0 ? "text" : "ref", Value = s}).ToList();
+
+                            // Resolve all of the references. If the referred entry doesn't exist, we'll throw an exception.
+                            // References are indexed by the entry's first term.
+                            // TODO?: Resolve references after parsing to support enable order-independent references.
+                            var references = parts.Where(p => p.Kind == "ref").Select(r =>
+                            {
+                                // TODO?: Improve performance by changing 'entries' into a dictionary
+                                var referredEntry = entries.First(dictionaryEntry => dictionaryEntry.Terms.First().Value == r.Value);
+
+                                if (referredEntry == null)
+                                {
+                                    LoadError(path, token, $"Reference to a non-existant entry: {r.Value}");
+                                }
+
+                                return referredEntry;
+                            }).ToDictionary(e => e.Terms.First().Value, e => e);
+
+                            // Loop over all subtypes and merge the parts with a StringBuilder.
+                            var terms = Enumerable.Range(0, subtypes.Length)
+                                .Select(i => parts.Aggregate(new StringBuilder(),
+                                    (sb, p) => sb.Append(p.Kind == "text" ? p.Value : references[p.Value].Terms[i].Value)).ToString())
+                                .ToArray();
+
+                            entry = new RantDictionaryEntry(terms, scopedClassSet, nsfw);
                             entries.Add(entry);
                         }
                         break;
