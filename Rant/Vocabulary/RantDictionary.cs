@@ -71,7 +71,7 @@ namespace Rant.Vocabulary
         /// <returns></returns>
         public static RantDictionary FromFile(string path, NsfwFilter filter)
         {
-            return new RantDictionary(new[] {RantDictionaryTable.FromFile(path)});
+            return new RantDictionary(new[] {RantDictionaryTable.FromFile(path, filter)});
         }
 
         /// <summary>
