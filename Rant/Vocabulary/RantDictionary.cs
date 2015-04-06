@@ -64,6 +64,17 @@ namespace Rant.Vocabulary
         }
 
         /// <summary>
+        /// Loads the specified dictionary (.dic) file and returns a Dictionary object that contains the loaded data.
+        /// </summary>
+        /// <param name="path">The path to the dictionary file.</param>
+        /// <param name="filter">Indicates whether dictionary entries marked with the #nsfw flag should be loaded.</param>
+        /// <returns></returns>
+        public static RantDictionary FromFile(string path, NsfwFilter filter)
+        {
+            return new RantDictionary(new[] {RantDictionaryTable.FromFile(path)});
+        }
+
+        /// <summary>
         /// Loads all dictionary (.dic) files from the specified directory and returns a Dictionary object that contains the loaded data.
         /// </summary>
         /// <param name="directory">The directory from which to load dictionaries.</param>
