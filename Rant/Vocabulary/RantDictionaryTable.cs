@@ -14,7 +14,7 @@ namespace Rant.Vocabulary
         /// <summary>
         /// The current version number of the table format.
         /// </summary>
-        public const int Version = 3;
+        public const int Version = 4;
 
         internal const string MissingTerm = "[?]";
 
