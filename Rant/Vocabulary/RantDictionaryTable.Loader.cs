@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using Rant.Engine;
 using Rant.Stringes;
@@ -141,22 +142,24 @@ namespace Rant.Vocabulary
 
                             header = false;
 
-                            // After splitting, mark every other part as a reference.
-                            // TODO?: Make Kind an enum instead of a string
-                            var parts = token.Value.Split('[', ']')
-                                .Select((s, i) => new {Kind = i % 2 == 0 ? "text" : "ref", Value = s}).ToList();
+                            var parts = ReferenceRegex.Matches(token.Value.Trim())
+                                .Cast<Match>().Select(m => m.ToString())
+                                .Select(s => new {Kind = s.StartsWith("[") ? RefEntryToken.Reference : RefEntryToken.Text,
+                                                  Value =  s.Trim('[', ']')}).ToList();
 
                             // Resolve all of the references. If the referred entry doesn't exist, we'll throw an exception.
                             // References are indexed by the entry's first term.
                             // TODO?: Resolve references after parsing to support enable order-independent references.
-                            var references = parts.Where(p => p.Kind == "ref").Select(r =>
+                            var references = parts.Where(p => p.Kind == RefEntryToken.Reference).Select(r =>
                             {
+                                var refName = r.Value.Trim();
+
                                 // TODO?: Improve performance by changing 'entries' into a dictionary
-                                var referredEntry = entries.Where(dictionaryEntry => dictionaryEntry.Terms.First().Value == r.Value).ToList();
+                                var referredEntry = entries.Where(dictionaryEntry => dictionaryEntry.Terms.First().Value == refName).ToList();
 
                                 if (referredEntry.Count == 0)
                                 {
-                                    LoadError(path, token, $"Reference to a non-existant entry: {r.Value}");
+                                    LoadError(path, token, $"Reference to a non-existant entry: {refName}");
                                 }
 
                                 return referredEntry.First();
@@ -165,7 +168,7 @@ namespace Rant.Vocabulary
                             // Loop over all subtypes and merge the parts with a StringBuilder.
                             var terms = Enumerable.Range(0, subtypes.Length)
                                 .Select(i => parts.Aggregate(new StringBuilder(),
-                                    (sb, p) => sb.Append(p.Kind == "text" ? p.Value : references[p.Value].Terms[i].Value)).ToString())
+                                    (sb, p) => sb.Append(p.Kind == RefEntryToken.Text ? p.Value : references[p.Value].Terms[i].Value)).ToString())
                                 .ToArray();
 
                             entry = new RantDictionaryEntry(terms, scopedClassSet, nsfw);
@@ -228,7 +231,16 @@ namespace Rant.Vocabulary
 
         private static void LoadError(string file, Stringe data, string message)
         {
-            throw new InvalidDataException(String.Format("({0}, Line {1}): {2}", Path.GetFileName(file), data.Line, message));
+            throw new InvalidDataException($"({Path.GetFileName(file)}, Line {data.Line}): {message}");
+        }
+
+        private static readonly Regex ReferenceRegex = new Regex(@"(?:\[(?<ref>[\w]+)\s*\])|(?<text>[^[]+)", RegexOptions.Compiled);
+
+        private enum RefEntryToken
+        {
+            Text,
+            Reference
         }
     }
+
 }
