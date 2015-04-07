@@ -6,3 +6,8 @@
 
 ^> rasp[berry]
 ^> straw[berry]
+
+>> entryA_A/-B
+>> entryB_A/-B
+
+^> [entryA_A] [entryB_A]

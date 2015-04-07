@@ -14,7 +14,7 @@ namespace Rant.Tests
             var dict = RantDictionary.FromFile("resources/references.dic", NsfwFilter.Allow);
             var entries = dict.GetTables().First().GetEntries().SelectMany(entry => entry.Terms).Select(term => term.Value).ToList();
 
-            Assert.AreEqual(entries.Count, 6);
+            Assert.AreEqual(entries.Count, 12);
 
             Assert.Contains("berry", entries);
             Assert.Contains("berries", entries);
@@ -24,6 +24,9 @@ namespace Rant.Tests
 
             Assert.Contains("strawberry", entries);
             Assert.Contains("strawberries", entries);
+
+            Assert.Contains("entryA_A entryB_A", entries);
+            Assert.Contains("entryA_B entryB_B", entries);
         }
 
         [Test]
